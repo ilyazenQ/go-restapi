@@ -38,3 +38,9 @@ values
     ('RUB'),
     ('EUR'),
     ('USD');
+
+insert into transactions(user_id, user_email, total, currency_id, status_id, created_at, updated_at)
+values
+    (1,'email@email.com',1,1,1,'0001-01-01T00:00:00Z','0001-01-01T00:00:00Z');
+
+
