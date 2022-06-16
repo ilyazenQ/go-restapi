@@ -1,18 +1,9 @@
-DROP TABLE IF EXISTS posts;
-
 DROP TABLE IF EXISTS status;
 
 DROP TABLE IF EXISTS currency;
 
 DROP TABLE IF EXISTS transactions;
 
-
-create table posts (
-  id serial not null unique,
-  title varchar(64),
-  content text,
-  primary key(id)
-);
 create table status (
      id serial not null unique,
      title varchar(64) not null unique,
@@ -47,10 +38,3 @@ values
     ('RUB'),
     ('EUR'),
     ('USD');
-
-
-
-insert into posts(title, content)
-values
-    ('Hello World', 'The obligatory Hello World Post ...'),
-    ('Another Post', 'Yet another blog post about something exciting');

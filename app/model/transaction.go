@@ -30,6 +30,10 @@ type Status struct {
 	Id    uint64 `json:"id" db:"id"`
 	Title string `json:"title" binding:"required"`
 }
+type GetStatusResponse struct {
+	Transaction_id uint64 `json:"transaction_id"`
+	Title          string `json:"title" binding:"required"`
+}
 
 type ChangeStatusRequest struct {
 	Transaction_id uint64 `json:"transaction_id"`
@@ -60,6 +64,11 @@ func CreateTransaction(t *Transaction) (string, error) {
 
 	query := `insert into transactions(user_id, user_email, total, currency_id, status_id, created_at, updated_at) 
 				values($1, $2, $3, $4, $5, $6, $7) RETURNING id;`
+
+	if t.User_id == 0 || t.User_email == "" || t.Currency_id == 0 {
+		errors.New("Not all required fields")
+		return "Not all required fields", errors.New("Not all required fields")
+	}
 
 	_, err := db.Exec(query, t.User_id, t.User_email, t.Total, t.Currency_id, t.Status_id, t.Created_at, t.Updated_at)
 
@@ -105,6 +114,11 @@ func GetTransaction(id uint64) (Transaction, error) {
 			Created_at:  createdAt,
 			Updated_at:  updatedAt,
 		}
+	}
+	if transaction.Id == 0 {
+		errors.New("Transactions not found")
+		return transaction, errors.New("Transactions not found")
+
 	}
 
 	return transaction, nil
@@ -199,12 +213,12 @@ func GetTransactionByUserEmail(email string) ([]Transaction, error) {
 	return transactions, nil
 }
 
-func GetTransactionStatus(id uint64) (Status, error) {
+func GetTransactionStatus(id uint64) (GetStatusResponse, error) {
 	var transaction Transaction
-	var status Status
+	var statusResponse GetStatusResponse
 	transaction, err := GetTransaction(id)
 	if err != nil {
-		return status, err
+		return statusResponse, err
 	}
 
 	statusId := transaction.Status_id
@@ -219,15 +233,16 @@ func GetTransactionStatus(id uint64) (Status, error) {
 
 		err := row.Scan(&title)
 		if err != nil {
-			return status, err
+			return statusResponse, err
 		}
 
-		status = Status{
-			Title: title,
+		statusResponse = GetStatusResponse{
+			Transaction_id: id,
+			Title:          title,
 		}
 	}
 
-	return status, nil
+	return statusResponse, nil
 }
 
 func GetAllTransactions() ([]Transaction, error) {
@@ -307,10 +322,12 @@ func ChangeTransactionStatus(csr *ChangeStatusRequest) (Transaction, error) {
 	}
 
 	if int(csr.Status_id) == transaction.Status_id {
+		errors.New("Cant change. It current status now")
 		return transaction, errors.New("Cant change. It current status now")
 	}
 
 	if _, ok := actions.GetAllStatus()[int(csr.Status_id)]; !ok {
+		errors.New("Status not found")
 		return transaction, errors.New("Status not found")
 	}
 
@@ -321,5 +338,6 @@ func ChangeTransactionStatus(csr *ChangeStatusRequest) (Transaction, error) {
 		return transaction, err
 	}
 	transaction.Status_id = int(csr.Status_id)
+
 	return transaction, nil
 }
